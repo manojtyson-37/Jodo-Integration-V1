@@ -21,6 +21,10 @@ def get_auth_user():
         elif pg_header == 'easebuzz' and request.headers.get('X-Merchant-Key') == '2P7S8793ST':
             return {'email': 'ebz_simulator', 'name': 'Easebuzz Simulator'}
         
+        # Master Demo Credentials (Persistent across redeploys)
+        if auth.username == 'jodo_sb_MASTER_KEY':
+            return {'email': 'master@jodo.io', 'name': 'Master Demo'}
+            
         # Local users
         users = load_json(USER_DATA_FILE)
         for email, user in users.items():

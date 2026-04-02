@@ -93,6 +93,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- UI Helpers ---
 
+function handleLogout() {
+    localStorage.removeItem('jodo_user');
+    window.location.href = '/dashboard/login.html';
+}
+
 // Playground API Interaction Logic
 const API_BASE_URL = window.location.origin + '/api/v1/integrations/pay/orders';
 const USER_DATA = JSON.parse(localStorage.getItem('jodo_user') || '{}');
