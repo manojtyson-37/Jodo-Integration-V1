@@ -412,3 +412,36 @@ function showLogDetails(log) {
     content.textContent = JSON.stringify(log, null, 2);
     modal.style.display = 'flex';
 }
+
+// Global UI Utilities
+window.copyText = function(text, label) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast(`📋 ${label} Copied!`);
+    });
+};
+
+window.copyToClipboard = function(elementId, label) {
+    const text = document.getElementById(elementId).innerText;
+    window.copyText(text, label);
+};
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.style = "position: fixed; bottom: 30px; right: 30px; background: #6366f1; color: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 1000; font-weight: 600; animation: slideUp 0.3s ease;";
+    toast.innerHTML = message;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Keyframe animation for toast
+const style = document.createElement('style');
+style.innerHTML = `
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+`;
+document.head.appendChild(style);

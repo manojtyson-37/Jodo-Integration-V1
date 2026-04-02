@@ -137,10 +137,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(url, fetchOptions);
             const data = await res.json();
             
-            responseBody.textContent = JSON.stringify(data, null, 4);
+            // Format JSON with clickable redirect_url
+            let jsonString = JSON.stringify(data, null, 4);
+            
+            // Regex to find "redirect_url": "..." and wrap value in <a> tag
+            jsonString = jsonString.replace(
+                /("redirect_url":\s*")([^"]+)"/g, 
+                `$1<a href="$2" target="_blank" style="color: #6366f1; text-decoration: underline; font-weight: 700; cursor: pointer;">$2</a>"`
+            );
+            
+            responseBody.innerHTML = jsonString;
 
-            if (url.includes('/orders') && method === 'POST' && data?.data?.payment_url) {
-                showToast(data.data.payment_url, true); // true for payment link
+            if (url.includes('/orders') && method === 'POST' && data?.data?.redirect_url) {
+                showToast(data.data.redirect_url, true); // true for payment link
             }
 
         } catch (err) {

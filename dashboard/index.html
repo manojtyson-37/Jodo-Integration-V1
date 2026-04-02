@@ -78,6 +78,39 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- Simulated Testing Instruments -->
+                <section class="card animate" style="animation-delay: 0.3s; margin-top: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 1.25rem;">Simulated Testing Instruments</h2>
+                        <span style="font-size: 0.7rem; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 12px; font-weight: 700;">LIVE SANDBOX</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <!-- Card Simulation -->
+                        <div style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div style="color: var(--secondary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 1rem; font-weight: 700;">Credit Card (Visa/Master)</div>
+                            <div style="font-family: monospace; font-size: 1.1rem; color: white; margin-bottom: 0.5rem; letter-spacing: 2px;">4242 4242 4242 4242</div>
+                            <div style="font-family: monospace; font-size: 0.9rem; color: var(--text-muted);">Exp: 12/30 • CVV: 123</div>
+                            <button class="copy-btn" onclick="copyText('4242424242424242', 'Card Number')" style="margin-top: 1rem; width: 100%; justify-content: center;">Copy Card</button>
+                        </div>
+                        
+                        <!-- UPI Simulation -->
+                        <div style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div style="color: #8b5cf6; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 1rem; font-weight: 700;">UPI (Google Pay/PhonePe)</div>
+                            <div style="font-family: monospace; font-size: 1.1rem; color: white; margin-bottom: 0.5rem;">success@jodo</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">Supports any @upi format</div>
+                            <button class="copy-btn" onclick="copyText('success@jodo', 'UPI ID')" style="margin-top: 1rem; width: 100%; justify-content: center;">Copy UPI</button>
+                        </div>
+                        
+                        <!-- Net Banking Simulation -->
+                        <div style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div style="color: #f59e0b; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 1rem; font-weight: 700;">Net Banking</div>
+                            <div style="font-family: monospace; font-size: 1rem; color: white; margin-bottom: 0.5rem;">User: jodo_tester</div>
+                            <div style="font-family: monospace; font-size: 1rem; color: white;">Pass: password123</div>
+                            <button class="copy-btn" onclick="copyText('jodo_tester', 'Username')" style="margin-top: 1rem; width: 100%; justify-content: center;">Copy User</button>
+                        </div>
+                    </div>
+                </section>
             </div>
 
             <!-- API Keys Tab Content -->

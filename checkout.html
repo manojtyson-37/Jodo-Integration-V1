@@ -254,18 +254,70 @@
             </div>
             <div class="modal-body" id="method-screen">
                 <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px; font-weight: 600;">Select Payment Method</div>
-                <div class="payment-option"><div class="payment-icon"><i class="fas fa-credit-card"></i></div><div><div style="font-weight: 600; font-size: 0.95rem;">Credit Card</div><div style="font-size: 0.75rem; color: var(--text-muted);">Visa, Mastercard, RuPay</div></div></div>
-                <div class="payment-option" onclick="showUPIDetail()"><div class="payment-icon"><i class="fas fa-mobile-alt"></i></div><div><div style="font-weight: 600; font-size: 0.95rem;">UPI</div><div style="font-size: 0.75rem; color: var(--text-muted);">GPay, PhonePe, Paytm</div></div></div>
-                <div class="payment-option"><div class="payment-icon"><i class="fas fa-university"></i></div><div style="font-weight: 600; font-size: 0.95rem;">NetBanking</div></div>
+                <div class="payment-option" onclick="showScreen('card-screen')">
+                    <div class="payment-icon"><i class="fas fa-credit-card"></i></div>
+                    <div><div style="font-weight: 600; font-size: 0.95rem;">Credit Card</div><div style="font-size: 0.75rem; color: var(--text-muted);">Visa, Mastercard, RuPay</div></div>
+                </div>
+                <div class="payment-option" onclick="showScreen('upi-screen')">
+                    <div class="payment-icon"><i class="fas fa-mobile-alt"></i></div>
+                    <div><div style="font-weight: 600; font-size: 0.95rem;">UPI</div><div style="font-size: 0.75rem; color: var(--text-muted);">GPay, PhonePe, Paytm</div></div>
+                </div>
+                <div class="payment-option" onclick="showScreen('nb-screen')">
+                    <div class="payment-icon"><i class="fas fa-university"></i></div>
+                    <div style="font-weight: 600; font-size: 0.95rem;">NetBanking</div>
+                </div>
             </div>
-            <div class="modal-body" id="upi-screen">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; cursor: pointer;" onclick="showMethods()">
+
+            <!-- UPI Screen -->
+            <div class="modal-body" id="upi-screen" style="display: none;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; cursor: pointer;" onclick="showScreen('method-screen')">
                     <i class="fas fa-arrow-left"></i> <span style="font-weight: 600;">Back to methods</span>
                 </div>
                 <div style="font-weight: 700; font-size: 1.1rem;">Enter UPI ID</div>
-                <input type="text" class="dummy-upi-input" id="upi-id" placeholder="jodo@upi">
-                <button class="btn-pay" onclick="finalizePayment()">Pay ₹{{ amount }}</button>
+                <input type="text" class="dummy-upi-input" id="upi-id" placeholder="jodo@upi" value="success@jodo">
+                <button class="btn-pay" onclick="finalizePayment('UPI')">Pay ₹{{ amount }}</button>
             </div>
+
+            <!-- Card Screen -->
+            <div class="modal-body" id="card-screen" style="display: none;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; cursor: pointer;" onclick="showScreen('method-screen')">
+                    <i class="fas fa-arrow-left"></i> <span style="font-weight: 600;">Back to methods</span>
+                </div>
+                <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 20px;">Enter Card Details</div>
+                <div class="form-group">
+                    <label>Card Number</label>
+                    <input type="text" placeholder="4242 4242 4242 4242" value="4242 4242 4242 4242">
+                </div>
+                <div style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Expiry</label>
+                        <input type="text" placeholder="MM/YY" value="12/30">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>CVV</label>
+                        <input type="password" placeholder="***" value="123">
+                    </div>
+                </div>
+                <button class="btn-pay" onclick="finalizePayment('CARD')">Pay ₹{{ amount }}</button>
+            </div>
+
+            <!-- Net Banking Screen -->
+            <div class="modal-body" id="nb-screen" style="display: none;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; cursor: pointer;" onclick="showScreen('method-screen')">
+                    <i class="fas fa-arrow-left"></i> <span style="font-weight: 600;">Back to methods</span>
+                </div>
+                <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 20px;">Select Bank</div>
+                <select id="bank-select" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px;">
+                    <option value="SBI">State Bank of India</option>
+                    <option value="HDFC">HDFC Bank</option>
+                    <option value="ICICI">ICICI Bank</option>
+                    <option value="AXIS">Axis Bank</option>
+                </select>
+                <div class="form-group"><label>Net Banking User</label><input type="text" value="jodo_tester"></div>
+                <div class="form-group"><label>Password</label><input type="password" value="••••••••"></div>
+                <button class="btn-pay" onclick="finalizePayment('NB')">Login & Pay ₹{{ amount }}</button>
+            </div>
+
             <div class="modal-body" id="processing-screen" style="display: none; text-align: center; padding: 60px 40px;">
                 <div style="width: 50px; height: 50px; border: 4px solid #f3f4f6; border-top-color: var(--jodo-blue); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 24px;"></div>
                 <div style="font-weight: 700; font-size: 1.2rem;">Processing Payment...</div>
@@ -288,76 +340,67 @@
 
         function showEasebuzz() { document.getElementById('easebuzz-modal').style.display = 'flex'; }
         function hideEasebuzz() { document.getElementById('easebuzz-modal').style.display = 'none'; }
-        function showUPIDetail() { document.getElementById('method-screen').style.display = 'none'; document.getElementById('upi-screen').style.display = 'block'; }
-        function showMethods() { document.getElementById('method-screen').style.display = 'block'; document.getElementById('upi-screen').style.display = 'none'; }
+        
+        function showScreen(screenId) {
+            // Hide all modal bodies
+            const screens = ['method-screen', 'upi-screen', 'card-screen', 'nb-screen', 'processing-screen'];
+            screens.forEach(s => {
+                const el = document.getElementById(s);
+                if (el) el.style.display = 'none';
+            });
+            // Show target
+            document.getElementById(screenId).style.display = 'block';
+        }
 
-        async function finalizePayment() {
-            const upiId = document.getElementById('upi-id').value;
-            if(!upiId) { alert("Enter UPI ID"); return; }
-            document.getElementById('upi-screen').style.display = 'none';
-            document.getElementById('processing-screen').style.display = 'block';
+        async function finalizePayment(method) {
+            showScreen('processing-screen');
 
             try {
                 const response = await fetch(`/pay/${ORDER_ID}/pay`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ success: true, latency: 1 })
+                    body: JSON.stringify({ success: true, latency: 1.5, method: method })
                 });
                 
                 if (response.ok) {
                     showSuccess();
                 } else { 
-                    try {
-                        const text = await response.text();
-                        try {
-                            const data = JSON.parse(text);
-                            alert("Error: " + (data.message || "Payment failed"));
-                        } catch (e) {
-                            alert("API Error: The server returned an invalid response.");
-                        }
-                    } catch (err) {
-                        alert("API Error: The server returned an invalid response.");
-                    }
+                    alert("API Error: Payment failed to synchronize.");
                     hideEasebuzz();
+                    showScreen('method-screen');
                 }
             } catch (e) { 
                 console.error(e);
-                alert("Connection error occurred. Please try again.");
+                alert("Connection error occurred.");
                 hideEasebuzz();
+                showScreen('method-screen');
             }
         }
 
         function showSuccess() {
             hideEasebuzz();
-            // Update Header
             document.getElementById('main-header').classList.add('success');
             document.getElementById('header-brand').textContent = "Payment Complete";
-            document.getElementById('header-status').textContent = "Order based PG";
             
-            // Show Success Details
             document.getElementById('initial-branding').style.display = 'none';
             document.getElementById('success-details').style.display = 'block';
             
-            // Populate Details
             document.getElementById('s-name').textContent = document.getElementById('p-name').value || 'N/A';
             document.getElementById('s-email').textContent = document.getElementById('p-email').value || 'N/A';
             document.getElementById('s-phone').textContent = document.getElementById('p-phone').value || 'N/A';
             document.getElementById('s-tid').textContent = PAY_ID;
             
-            // Switch Card
             document.getElementById('card-initial').style.display = 'none';
             document.getElementById('card-success').style.display = 'block';
 
-            // Automatic Merchant Redirection (Typical PG Behavior)
             if (CALLBACK_URL && CALLBACK_URL !== "") {
                 const separator = CALLBACK_URL.includes('?') ? '&' : '?';
                 const redirectParams = `order_id=${ORDER_ID}&status=paid&payment_id=${PAY_ID}`;
                 const finalUrl = `${CALLBACK_URL}${separator}${redirectParams}`;
                 
-                console.log("Redirecting to Merchant Callback:", finalUrl);
                 setTimeout(() => {
                     window.location.href = finalUrl;
-                }, 2000); // 2 second delay for checkmark visibility
+                }, 2000);
             }
         }
     </script>
