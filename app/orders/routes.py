@@ -11,6 +11,10 @@ orders_bp = Blueprint('orders', __name__)
 ORDER_DATA_FILE = 'orders.json'
 USER_DATA_FILE = 'users.json'
 
+from ..utils.db import save_order_db, get_order_db, list_orders_db, get_user_by_key_db
+
+orders_bp = Blueprint('orders', __name__)
+
 def get_auth_user():
     auth = request.authorization
     pg_header = request.headers.get('X-PG', 'jodo')
@@ -28,11 +32,10 @@ def get_auth_user():
             email = session_email or 'master@jodo.io'
             return {'email': email, 'name': 'Master Demo'}
             
-        # Local users
-        users = load_json(USER_DATA_FILE)
-        for email, user in users.items():
-            if user['sandbox_key'] == auth.username:
-                return {'email': email, 'name': user['name']}
+        # Local users via Database
+        user = get_user_by_key_db(auth.username)
+        if user:
+            return {'email': user['email'], 'name': user['name']}
     
     return None
 

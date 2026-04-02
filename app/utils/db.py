@@ -176,3 +176,66 @@ def list_orders_db(user_email):
         order['details'] = json.loads(order.pop('details'))
         orders.append(order)
     return orders
+
+def save_user_db(user_data):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    db_url = os.getenv('DATABASE_URL')
+    
+    if db_url:
+        sql = '''
+            INSERT INTO users (email, name, password, sandbox_key, sandbox_secret, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (email) DO UPDATE SET 
+                name = EXCLUDED.name,
+                password = EXCLUDED.password,
+                sandbox_key = EXCLUDED.sandbox_key,
+                sandbox_secret = EXCLUDED.sandbox_secret
+        '''
+    else:
+        sql = 'INSERT OR REPLACE INTO users (email, name, password, sandbox_key, sandbox_secret, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+        
+    cursor.execute(sql, (
+        user_data['email'],
+        user_data['name'],
+        user_data['password'],
+        user_data['sandbox_key'],
+        user_data['sandbox_secret'],
+        user_data.get('created_at', datetime.now().isoformat())
+    ))
+    conn.commit()
+    conn.close()
+
+def get_user_db(email):
+    conn = get_db_connection()
+    db_url = os.getenv('DATABASE_URL')
+    
+    if db_url:
+        from psycopg2.extras import RealDictCursor
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        placeholder = "%s"
+    else:
+        cursor = conn.cursor()
+        placeholder = "?"
+        
+    cursor.execute(f'SELECT * FROM users WHERE email = {placeholder}', (email,))
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+def get_user_by_key_db(sandbox_key):
+    conn = get_db_connection()
+    db_url = os.getenv('DATABASE_URL')
+    
+    if db_url:
+        from psycopg2.extras import RealDictCursor
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        placeholder = "%s"
+    else:
+        cursor = conn.cursor()
+        placeholder = "?"
+        
+    cursor.execute(f'SELECT * FROM users WHERE sandbox_key = {placeholder}', (sandbox_key,))
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None

@@ -31,24 +31,24 @@ def signup():
     if not email or not password:
         return jsonify({'status': 'error', 'message': 'Email and password are required'}), 400
     
-    users = load_json(USER_DATA_FILE)
-    if email in users:
+    if get_user_db(email):
         return jsonify({'status': 'error', 'message': 'User already exists'}), 400
     
     # Create new user with sandbox keys and webhook list
     sandbox_key = f"jodo_sb_{uuid.uuid4().hex[:12]}"
     sandbox_secret = uuid.uuid4().hex
     
-    users[email] = {
+    user_data = {
+        'email': email,
         'password': password,
         'name': name,
         'sandbox_key': sandbox_key,
         'sandbox_secret': sandbox_secret,
         'webhooks': [],
         'activated': False,
-        'created_at': uuid.uuid4().hex
+        'created_at': datetime.now().isoformat()
     }
-    save_json(USER_DATA_FILE, users)
+    save_user_db(user_data)
     
     notify_new_user(email, name)
     
@@ -65,8 +65,7 @@ def login():
     email = data.get('email')
     password = data.get('password')
     
-    users = load_json(USER_DATA_FILE)
-    user = users.get(email)
+    user = get_user_db(email)
     
     if user and user['password'] == password:
         notify_login(email)
