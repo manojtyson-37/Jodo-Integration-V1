@@ -3,7 +3,7 @@ from datetime import datetime
 import os
 import uuid
 import time
-from ..utils.storage import load_json, save_json
+from ..utils.db import get_order_db, save_order_db
 from ..utils.notifier import send_message
 from ..webhooks.routes import deliver_webhook_async
 
@@ -16,8 +16,7 @@ def checkout(order_id):
     """
     Renders the mock checkout page for a specific order.
     """
-    orders = load_json(ORDER_DATA_FILE)
-    order = orders.get(order_id)
+    order = get_order_db(order_id)
     
     if not order:
         return "Order not found", 404
@@ -26,7 +25,8 @@ def checkout(order_id):
                             order_id=order_id, 
                             amount=order['amount'], 
                             pg=order['pg'], 
-                            customer=order['customer'])
+                            customer=order['customer'],
+                            callback_url=order.get('callback_url'))
 
 @sim_bp.route('/<order_id>/pay', methods=['POST'])
 def process_payment(order_id):
@@ -39,8 +39,7 @@ def process_payment(order_id):
     # if latency > 0:
     #     time.sleep(min(latency, 10))
         
-    orders = load_json(ORDER_DATA_FILE)
-    order = orders.get(order_id)
+    order = get_order_db(order_id)
     
     if not order:
         return jsonify({"status": "error", "message": "Order not found"}), 404
@@ -54,8 +53,7 @@ def process_payment(order_id):
     if success:
         order['payment_id'] = f"pay_{uuid.uuid4().hex[:12]}"
         
-    orders[order_id] = order
-    save_json(ORDER_DATA_FILE, orders)
+    save_order_db(order_id, order)
     
     # Notify Admin
     msg = (f"💳 *Simulation: Payment {order['status'].upper()}*\n\n"
@@ -85,13 +83,11 @@ def process_payment(order_id):
         # In a real system, this would be a separate background job
         def late_settle():
             time.sleep(30)
-            orders_late = load_json(ORDER_DATA_FILE)
-            order_late = orders_late.get(order_id)
+            order_late = get_order_db(order_id)
             if order_late and order_late['status'] == 'paid':
                 order_late['status'] = 'settled'
                 order_late['updated_at'] = datetime.now().isoformat()
-                orders_late[order_id] = order_late
-                save_json(ORDER_DATA_FILE, orders_late)
+                save_order_db(order_id, order_late)
                 
                 # Settle Webhook
                 settle_payload = {

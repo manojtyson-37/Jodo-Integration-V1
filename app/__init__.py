@@ -20,6 +20,9 @@ def create_app():
         os.makedirs(app.config['DATA_DIR'])
     
     with app.app_context():
+        from .utils.db import init_db
+        init_db()
+        
         from .auth.routes import auth_bp
         from .orders.routes import orders_bp
         from .webhooks.routes import webhooks_bp

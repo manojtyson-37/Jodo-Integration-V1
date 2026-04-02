@@ -4,6 +4,7 @@ import os
 import uuid
 from ..utils.storage import load_json, save_json
 from ..utils.notifier import notify_order_created
+from ..utils.db import save_order_db, get_order_db, list_orders_db
 
 orders_bp = Blueprint('orders', __name__)
 
@@ -68,13 +69,12 @@ def create_order():
     # Standardize amount
     total_amount = total_amount or 0
 
-    # Persist the order
-    orders = load_json(ORDER_DATA_FILE)
-    orders[order_id] = {
+    # Persist the order to SQLite DB
+    order_doc = {
         "user_email": user['email'],
         "amount": total_amount,
         "currency": data.get("currency", "INR"),
-        "details": details,  # Preserve official Jodo details
+        "details": details,
         "status": "created",
         "pg": pg_header,
         "customer": {
@@ -84,21 +84,23 @@ def create_order():
         },
         "callback_url": data.get("callback_url"),
         "created_at": datetime.now().isoformat(),
-        "updated_at": datetime.now().isoformat(),
-        "redirect_url": payment_url
+        "updated_at": datetime.now().isoformat()
     }
-    save_json(ORDER_DATA_FILE, orders)
+    save_order_db(order_id, order_doc)
     
     notify_order_created(order_id, total_amount, data.get("name", "Customer"))
     
+    # Generate Absolute Order Redirect URL
+    redirect_url = f"{request.host_url.rstrip('/')}/pay/{order_id}"
+
+    # Persist the order
+    # ... previous logic ...
+    
     return jsonify({
         "status": "success",
-        "message": f"Order created in {pg_header.capitalize()} Sandbox",
         "data": {
-            "id": order_id,
-            "payment_url": payment_url,
-            "request_id": f"Root=1-{uuid.uuid4().hex[:8]}",
-            "timestamp": datetime.now().isoformat()
+            "order_id": order_id,
+            "redirect_url": redirect_url
         }
     })
 
@@ -108,8 +110,7 @@ def get_order(order_id):
     if not user:
         return jsonify({"status": "error", "message": "Unauthorized"}), 401
         
-    orders = load_json(ORDER_DATA_FILE)
-    order = orders.get(order_id)
+    order = get_order_db(order_id)
     
     if not order:
         return jsonify({"status": "error", "message": "Order not found"}), 404
@@ -133,8 +134,16 @@ def get_order(order_id):
 
 @orders_bp.route('/list', methods=['GET'])
 def list_orders():
-    # Helper for Dashboard
     user_email = request.args.get('email')
+    if not user_email:
+        return jsonify({"status": "error", "message": "Email required"}), 400
+        
+    user_orders = list_orders_db(user_email)
+    
+    return jsonify({
+        "status": "success",
+        "data": user_orders
+    })
     if not user_email:
         return jsonify({"status": "error", "message": "Email required"}), 400
         

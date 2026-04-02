@@ -283,6 +283,7 @@
     <script>
         const ORDER_ID = "{{ order_id }}";
         const AMOUNT = {{ amount }};
+        const CALLBACK_URL = "{{ callback_url or '' }}";
         const PAY_ID = "DeCk" + Math.random().toString(36).substring(2, 12).toUpperCase();
 
         function showEasebuzz() { document.getElementById('easebuzz-modal').style.display = 'flex'; }
@@ -346,6 +347,18 @@
             // Switch Card
             document.getElementById('card-initial').style.display = 'none';
             document.getElementById('card-success').style.display = 'block';
+
+            // Automatic Merchant Redirection (Typical PG Behavior)
+            if (CALLBACK_URL && CALLBACK_URL !== "") {
+                const separator = CALLBACK_URL.includes('?') ? '&' : '?';
+                const redirectParams = `order_id=${ORDER_ID}&status=paid&payment_id=${PAY_ID}`;
+                const finalUrl = `${CALLBACK_URL}${separator}${redirectParams}`;
+                
+                console.log("Redirecting to Merchant Callback:", finalUrl);
+                setTimeout(() => {
+                    window.location.href = finalUrl;
+                }, 2000); // 2 second delay for checkmark visibility
+            }
         }
     </script>
     <style> @keyframes spin { to { transform: rotate(360deg); } } </style>
