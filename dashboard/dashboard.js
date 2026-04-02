@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function handleLogout() {
     localStorage.removeItem('jodo_user');
-    window.location.href = '/dashboard/login.html';
+    window.location.href = '/';
 }
 
 // Playground API Interaction Logic
