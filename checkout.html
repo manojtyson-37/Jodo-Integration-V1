@@ -302,10 +302,19 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ success: true, latency: 1 })
                 });
+                
                 if (response.ok) {
                     showSuccess();
-                } else { alert("Error"); }
-            } catch (e) { console.error(e); }
+                } else { 
+                    const data = await response.json();
+                    alert("Error: " + (data.message || "Payment failed"));
+                    hideEasebuzz();
+                }
+            } catch (e) { 
+                console.error(e);
+                alert("Connection error occurred. Please try again.");
+                hideEasebuzz();
+            }
         }
 
         function showSuccess() {

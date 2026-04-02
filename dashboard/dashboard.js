@@ -178,7 +178,10 @@ async function generateNewKeys() {
     try {
         const response = await fetch('/api/v1/auth/keys/rotate', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json', 
+                'X-Jodo-Session-Email': user.email || ''
+            },
             body: JSON.stringify({ email: user.email })
         });
         

@@ -13,6 +13,7 @@ USER_DATA_FILE = 'users.json'
 def get_auth_user():
     auth = request.authorization
     pg_header = request.headers.get('X-PG', 'jodo')
+    session_email = request.headers.get('X-Jodo-Session-Email')
     
     if auth and auth.username:
         # Standard keys from server.py (simulation mode)
@@ -23,7 +24,8 @@ def get_auth_user():
         
         # Master Demo Credentials (Persistent across redeploys)
         if auth.username == 'jodo_sb_MASTER_KEY':
-            return {'email': 'master@jodo.io', 'name': 'Master Demo'}
+            email = session_email or 'master@jodo.io'
+            return {'email': email, 'name': 'Master Demo'}
             
         # Local users
         users = load_json(USER_DATA_FILE)

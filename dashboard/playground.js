@@ -127,7 +127,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const headers = { 
                 'Content-Type': 'application/json', 
                 'X-PG': pg,
-                'Authorization': 'Basic ' + btoa((user.sandbox_key || '') + ':')
+                'X-Jodo-Session-Email': USER_DATA.email || '',
+                'Authorization': 'Basic ' + btoa((USER_DATA.sandbox_key || '') + ':')
             };
 
             const fetchOptions = { method, headers };
