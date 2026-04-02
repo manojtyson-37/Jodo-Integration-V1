@@ -1,6 +1,7 @@
 import os
 import json
 import sqlite3
+import uuid
 from datetime import datetime
 
 # Database Connection Helper
@@ -45,19 +46,33 @@ def init_db():
         )
     ''')
     
-    # 2. Core Users Table
+    # 3. Webhooks Table
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            email TEXT PRIMARY KEY,
-            name TEXT,
-            password TEXT,
-            sandbox_key TEXT,
-            sandbox_secret TEXT,
+        CREATE TABLE IF NOT EXISTS webhooks (
+            id TEXT PRIMARY KEY,
+            user_email TEXT,
+            url TEXT,
+            events TEXT,
             created_at TEXT
         )
     ''')
-    
-    # 3. Dynamic Schema Migrations (Fix for 500 Errors)
+
+    # 4. Webhook Logs Table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS webhook_logs (
+            id TEXT PRIMARY KEY,
+            user_email TEXT,
+            event TEXT,
+            url TEXT,
+            status TEXT,
+            attempts INTEGER,
+            response_code INTEGER,
+            timestamp TEXT,
+            payload TEXT
+        )
+    ''')
+
+    # 5. Dynamic Schema Migrations (Fix for 500 Errors)
     # Detect existing columns to prevent errors on multiple restarts
     columns = []
     if db_url:
@@ -142,7 +157,7 @@ def list_orders_db(user_email):
     else:
         cursor = conn.cursor()
         placeholder = "?"
-    cursor.execute(f'SELECT * FROM orders WHERE user_email = {placeholder}', (user_email,))
+    cursor.execute(f'SELECT * FROM orders WHERE user_email = {placeholder} ORDER BY created_at DESC', (user_email,))
     rows = cursor.fetchall()
     conn.close()
     orders = []
@@ -222,3 +237,93 @@ def get_user_by_key_db(sandbox_key):
         user['activated'] = bool(user['activated'])
         return user
     return None
+
+# --- Webhook DB Utilities ---
+
+def save_webhook_db(user_email, url, events):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    db_url = os.getenv('DATABASE_URL')
+    
+    webhook_id = f"wh_{uuid.uuid4().hex[:10]}"
+    
+    if db_url:
+        sql = "INSERT INTO webhooks (id, user_email, url, events, created_at) VALUES (%s, %s, %s, %s, %s)"
+    else:
+        sql = "INSERT INTO webhooks VALUES (?, ?, ?, ?, ?)"
+        
+    cursor.execute(sql, (webhook_id, user_email, url, json.dumps(events), datetime.now().isoformat()))
+    conn.commit()
+    conn.close()
+
+def list_webhooks_db(user_email):
+    conn = get_db_connection()
+    db_url = os.getenv('DATABASE_URL')
+    if db_url:
+        from psycopg2.extras import RealDictCursor
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        placeholder = "%s"
+    else:
+        cursor = conn.cursor()
+        placeholder = "?"
+    cursor.execute(f'SELECT * FROM webhooks WHERE user_email = {placeholder}', (user_email,))
+    rows = cursor.fetchall()
+    conn.close()
+    hooks = []
+    for row in rows:
+        h = dict(row)
+        h['events'] = json.loads(h['events'] or '[]')
+        hooks.append(h)
+    return hooks
+
+def delete_webhook_db(user_email, url):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    db_url = os.getenv('DATABASE_URL')
+    placeholder = "%s" if db_url else "?"
+    cursor.execute(f'DELETE FROM webhooks WHERE user_email = {placeholder} AND url = {placeholder}', (user_email, url))
+    conn.commit()
+    conn.close()
+
+def save_webhook_log_db(log_data):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    db_url = os.getenv('DATABASE_URL')
+    
+    if db_url:
+        sql = '''
+            INSERT INTO webhook_logs (id, user_email, event, url, status, attempts, response_code, timestamp, payload)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        '''
+    else:
+        sql = "INSERT INTO webhook_logs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        
+    cursor.execute(sql, (
+        log_data.get('id', str(uuid.uuid4())[:8]),
+        log_data['user_email'], log_data['event'], log_data['url'],
+        log_data['status'], log_data['attempts'], log_data['response_code'],
+        log_data.get('timestamp', datetime.now().isoformat()),
+        json.dumps(log_data.get('payload', {}))
+    ))
+    conn.commit()
+    conn.close()
+
+def list_webhook_logs_db(user_email):
+    conn = get_db_connection()
+    db_url = os.getenv('DATABASE_URL')
+    if db_url:
+        from psycopg2.extras import RealDictCursor
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        placeholder = "%s"
+    else:
+        cursor = conn.cursor()
+        placeholder = "?"
+    cursor.execute(f'SELECT * FROM webhook_logs WHERE user_email = {placeholder} ORDER BY timestamp DESC LIMIT 50', (user_email,))
+    rows = cursor.fetchall()
+    conn.close()
+    logs = []
+    for row in rows:
+        l = dict(row)
+        l['payload'] = json.loads(l['payload'] or '{}')
+        logs.append(l)
+    return logs

@@ -9,8 +9,6 @@ from ..webhooks.routes import deliver_webhook_async
 
 sim_bp = Blueprint('simulation', __name__)
 
-ORDER_DATA_FILE = 'orders.json'
-
 @sim_bp.route('/<order_id>')
 def checkout(order_id):
     """

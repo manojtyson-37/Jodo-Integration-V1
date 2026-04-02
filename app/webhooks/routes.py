@@ -6,13 +6,15 @@ import threading
 import requests
 from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app
-from ..utils.storage import load_json, save_json
+from ..utils.db import (
+    save_webhook_db, 
+    list_webhooks_db, 
+    delete_webhook_db, 
+    list_webhook_logs_db, 
+    save_webhook_log_db
+)
 
 webhooks_bp = Blueprint('webhooks', __name__)
-
-WEBHOOK_DATA_FILE = 'webhooks.json'
-WEBHOOK_LOG_FILE = 'webhook_logs.json'
-USER_DATA_FILE = 'users.json'
 
 def get_user_email():
     """
@@ -31,20 +33,7 @@ def list_webhooks():
     if not email:
         return jsonify({"status": "error", "message": "Email required"}), 400
     
-    webhooks = load_json(WEBHOOK_DATA_FILE)
-    user_hooks = webhooks.get(email, [])
-    
-    # Automatic Migration: Convert strings to objects if found
-    migrated = False
-    for i, hook in enumerate(user_hooks):
-        if isinstance(hook, str):
-            user_hooks[i] = {"url": hook, "events": ["*"]} # "*" means all events
-            migrated = True
-    
-    if migrated:
-        webhooks[email] = user_hooks
-        save_json(WEBHOOK_DATA_FILE, webhooks)
-    
+    user_hooks = list_webhooks_db(email)
     return jsonify({
         "status": "success",
         "data": user_hooks
@@ -60,20 +49,7 @@ def add_webhook():
     if not email or not url:
         return jsonify({"status": "error", "message": "Email and URL required"}), 400
         
-    webhooks = load_json(WEBHOOK_DATA_FILE)
-    if email not in webhooks:
-        webhooks[email] = []
-        
-    # Check for duplicates by URL
-    existing_urls = [h['url'] if isinstance(h, dict) else h for h in webhooks[email]]
-    if url in existing_urls:
-        return jsonify({"status": "error", "message": "Webhook URL already exists"}), 400
-        
-    webhooks[email].append({
-        "url": url,
-        "events": events if isinstance(events, list) else ['*']
-    })
-    save_json(WEBHOOK_DATA_FILE, webhooks)
+    save_webhook_db(email, url, events)
     
     return jsonify({
         "status": "success",
@@ -82,20 +58,13 @@ def add_webhook():
 
 @webhooks_bp.route('/<int:index>', methods=['DELETE'])
 def delete_webhook(index):
+    # Note: DB-backed deletion uses URL since index is risky in a relational world
     email = request.args.get('email')
-    if not email:
-        return jsonify({"status": "error", "message": "Email required"}), 400
+    url = request.args.get('url')
+    if not email or not url:
+        return jsonify({"status": "error", "message": "Email and URL required for deletion"}), 400
         
-    webhooks = load_json(WEBHOOK_DATA_FILE)
-    user_hooks = webhooks.get(email, [])
-    
-    if index < 0 or index >= len(user_hooks):
-        return jsonify({"status": "error", "message": "Invalid index"}), 400
-        
-    user_hooks.pop(index)
-    webhooks[email] = user_hooks
-    save_json(WEBHOOK_DATA_FILE, webhooks)
-    
+    delete_webhook_db(email, url)
     return jsonify({"status": "success", "message": "Webhook removed"})
 
 @webhooks_bp.route('/logs', methods=['GET'])
@@ -104,13 +73,10 @@ def list_logs():
     if not email:
         return jsonify({"status": "error", "message": "Email required"}), 400
         
-    logs = load_json(WEBHOOK_LOG_FILE, default=[])
-    user_logs = [l for l in logs if l.get('user_email') == email]
-    user_logs.reverse() # Show most recent first
-    
+    user_logs = list_webhook_logs_db(email)
     return jsonify({
         "status": "success",
-        "data": user_logs[:50]
+        "data": user_logs
     })
 
 # --- Webhook Delivery Logic ---
@@ -121,44 +87,26 @@ def deliver_webhook_async(user_email, event_type, payload):
 
 def delivery_worker(user_email, event_type, payload):
     """
-    Background worker with absolute path resolution and stdout logging for terminal visibility.
+    Background worker with DB-backed logging and stdout status.
     """
-    # 1. Resolve absolute path to the data directory
-    ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
-    data_dir = os.path.join(ROOT_DIR, 'data')
-    
     print(f"📦 INFO: Webhook Delivery Started | User: {user_email} | Event: {event_type}")
 
-    webhooks_content = {}
-    try:
-        data_path = os.path.join(data_dir, WEBHOOK_DATA_FILE)
-        with open(data_path, 'r') as f:
-            webhooks_content = json.load(f)
-    except Exception as e:
-        print(f"❌ ERROR: Failed to load webhooks.json in background worker: {e}")
-        return
-
-    hooks = webhooks_content.get(user_email, [])
+    hooks = list_webhooks_db(user_email)
     if not hooks:
         print(f"⚠️ INFO: No webhooks found for user {user_email}")
         return
 
     for hook in hooks:
         try:
-            # Standardize hook (handle migration on-the-fly in the worker as well)
-            url = hook['url'] if isinstance(hook, dict) else hook
-            events = hook.get('events', ['*']) if isinstance(hook, dict) else ['*']
+            url = hook['url']
+            events = hook.get('events', ['*'])
 
             # Event Filtering
             if '*' not in events and event_type not in events:
-                print(f"⏭️ INFO: Skipping {event_type} for {url} (Events configured: {events})")
                 continue
-
-            print(f"🚀 INFO: Attempting POST to {url} for event {event_type}")
 
             attempts = 0
             max_retries = 3
-            backoff = 2
             success = False
             last_response = 0
 
@@ -169,36 +117,25 @@ def delivery_worker(user_email, event_type, payload):
                     last_response = response.status_code
                     if response.status_code < 300:
                         success = True
-                        print(f"✅ SUCCESS: Webhook delivered to {url} (Status: {last_response})")
                         break
-                except Exception as e:
-                    print(f"⚠️ TRY {attempts}/{max_retries} FAILED: {url} | Error: {e}")
+                except Exception:
                     last_response = 500
 
                 if attempts < max_retries:
-                    time.sleep(backoff ** attempts)
+                    time.sleep(2 ** attempts)
 
-            # Log to webhook_logs.json
+            # Log to DB
             log_entry = {
-                "id": str(uuid.uuid4())[:8],
                 "user_email": user_email,
                 "event": event_type,
                 "url": url,
                 "status": "success" if success else "failed",
                 "attempts": attempts,
                 "response_code": last_response,
-                "timestamp": datetime.now().isoformat(),
                 "payload": payload
             }
-            
-            log_path = os.path.join(data_dir, WEBHOOK_LOG_FILE)
-            logs = []
-            if os.path.exists(log_path):
-                with open(log_path, 'r') as f:
-                    logs = json.load(f)
-            logs.append(log_entry)
-            with open(log_path, 'w') as f:
-                json.dump(logs, f, indent=4)
+            save_webhook_log_db(log_entry)
+            print(f"{'✅' if success else '❌'} Webhook: {url} | Status: {last_response}")
         
         except Exception as e:
-            print(f"💣 CRITICAL ERROR in delivery loop: {e}")
+            print(f"💣 CRITICAL ERROR in delivery worker: {e}")

@@ -334,7 +334,8 @@
 
     <script>
         const ORDER_ID = "{{ order_id }}";
-        const AMOUNT = {{ amount }};
+        const AMOUNT_STR = "{{ amount }}";
+        const AMOUNT = parseFloat(AMOUNT_STR) || 0;
         const CALLBACK_URL = "{{ callback_url or '' }}";
         const PAY_ID = "DeCk" + Math.random().toString(36).substring(2, 12).toUpperCase();
 
@@ -365,7 +366,8 @@
                 if (response.ok) {
                     showSuccess();
                 } else { 
-                    alert("API Error: Payment failed to synchronize.");
+                    const error = await response.json();
+                    alert(`⚠️ Payment Error: ${error.message || 'Synchronization failed.'}`);
                     hideEasebuzz();
                     showScreen('method-screen');
                 }

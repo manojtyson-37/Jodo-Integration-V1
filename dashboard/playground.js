@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let curlCmd = `curl --location 'https://${authString}@${baseUrl.replace('https://', '')}${endpoint}' \\\n`;
         curlCmd += `--header 'Content-Type: application/json' \\\n`;
         curlCmd += `--header 'X-PG: jodo' \\\n`;
+        curlCmd += `--header 'X-Jodo-Session-Email: ${user.email || ""}' \\\n`;
         
         if (method !== 'GET' && bodyContent) {
             curlCmd += `--data-raw '${bodyContent.replace(/'/g, "'\\''")}'`;
@@ -124,17 +125,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 url = url.replace(':id', id);
             }
 
+            // Ensure absolute URL to root to avoid relative pathing issues from /dashboard/
+            const fetchUrl = window.location.origin + (url.startsWith('/') ? url : '/' + url);
+
+            if (!user.sandbox_key) {
+                throw new Error("Missing API Key. Please refresh or check your dashboard.");
+            }
+
             const headers = { 
                 'Content-Type': 'application/json', 
                 'X-PG': pg,
-                'X-Jodo-Session-Email': USER_DATA.email || '',
-                'Authorization': 'Basic ' + btoa((USER_DATA.sandbox_key || '') + ':')
+                'X-Jodo-Session-Email': user.email || '',
+                'Authorization': 'Basic ' + btoa(user.sandbox_key + ':')
             };
 
             const fetchOptions = { method, headers };
             if (body && method !== 'GET') fetchOptions.body = JSON.stringify(body);
 
-            const res = await fetch(url, fetchOptions);
+            const res = await fetch(fetchUrl, fetchOptions);
             const data = await res.json();
             
             // Format JSON with clickable redirect_url

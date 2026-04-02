@@ -11,6 +11,16 @@ auth_bp = Blueprint('auth', __name__)
 def index():
     return send_from_directory(current_app.config['ROOT_DIR'], 'login.html')
 
+@auth_bp.route('/login.html')
+def login_redirect():
+    from flask import redirect
+    return redirect('/')
+
+@auth_bp.route('/signup.html')
+def signup_redirect():
+    from flask import redirect
+    return redirect('/signup')
+
 @auth_bp.route('/console-home')
 def dashboard():
     return send_from_directory(os.path.join(current_app.config['ROOT_DIR'], 'dashboard'), 'index.html')

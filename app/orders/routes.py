@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime
 import os
 import uuid
+import base64
 from ..utils.storage import load_json, save_json
 from ..utils.notifier import notify_order_created
 from ..utils.db import save_order_db, get_order_db, list_orders_db
@@ -20,20 +21,39 @@ def get_auth_user():
     pg_header = request.headers.get('X-PG', 'jodo')
     session_email = request.headers.get('X-Jodo-Session-Email')
     
+    # Priority 1: Standard Flask Authorization Object
     if auth and auth.username:
+        username = auth.username
+    # Priority 2: Manual Parse (Safety for WSGI/Render environments)
+    elif request.headers.get('Authorization'):
+        try:
+            auth_header = request.headers.get('Authorization')
+            if auth_header.startswith('Basic '):
+                encoded = auth_header.split(' ')[1]
+                decoded = base64.b64decode(encoded).decode('utf-8')
+                username = decoded.split(':')[0]
+            else:
+                username = None
+        except:
+            username = None
+    else:
+        username = None
+
+    if username:
         # Standard keys from server.py (simulation mode)
-        if pg_header == 'razorpay' and auth.username == 'rzp_test_K0W8zUvD1S8R6C':
+        if pg_header == 'razorpay' and username == 'rzp_test_K0W8zUvD1S8R6C':
             return {'email': 'rzp_simulator', 'name': 'Razorpay Simulator'}
         elif pg_header == 'easebuzz' and request.headers.get('X-Merchant-Key') == '2P7S8793ST':
             return {'email': 'ebz_simulator', 'name': 'Easebuzz Simulator'}
         
         # Master Demo Credentials (Persistent across redeploys)
-        if auth.username == 'jodo_sb_MASTER_KEY':
+        if username == 'jodo_sb_MASTER_KEY':
+            # Priority: Header -> Local Storage Sync Case
             email = session_email or 'master@jodo.io'
             return {'email': email, 'name': 'Master Demo'}
             
         # Local users via Database
-        user = get_user_by_key_db(auth.username)
+        user = get_user_by_key_db(username)
         if user:
             return {'email': user['email'], 'name': user['name']}
     
