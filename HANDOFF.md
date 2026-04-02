@@ -2,13 +2,45 @@
 
 This document tracks the current state, architecture, and progress of the Jodo Developer Portal integration project.
 
-## 🚀 Project Overview
-The Jodo Developer Portal is a professional, self-service integration platform. It features a developer-centric sandbox environment that mirrors the production Jodo API ecosystem without real onboarding or financial commitment.
+## 🚀 V6 - Production Persistence & Standardized PG Behavior
+The sandbox has been upgraded to match industry-standard payment gateway behavior (Razorpay/Easebuzz style) and uses a persistent database.
+
+### 1. Standardized API Response
+The `create_order` API now returns the following standard structure:
+```json
+{
+    "status": "success",
+    "data": {
+        "order_id": "order_xyz123",
+        "redirect_url": "https://your-domain.com/pay/order_xyz123"
+    }
+}
+```
+
+### 2. Automatic Redirection (Merchant Callback)
+After a successful payment simulation:
+- The checkout page waits **2 seconds** (for the success checkmark).
+- It then **automatically redirects** the browser to the merchant's `callback_url`.
+- URL Parameters included: `?order_id=...&status=paid&payment_id=...`
+
+### 3. Data Persistence (Render Guide)
+The system now uses **SQLite** (`data/sandbox.db`). To prevent data loss on Render:
+1. Go to your **Render Dashboard** -> **Blueprints** or **Web Service**.
+2. Go to **Settings** -> **Disks**.
+3. Add a **Disk**:
+   - **Name**: `sandbox-data`
+   - **Mount Path**: `/opt/render/project/src/data`
+   - **Size**: 1GB (Free tier/Minimum)
+This ensures your orders and users are **never deleted**, even when the server restarts.
+
+### 4. Master Demo Key
+- **Key**: `jodo_sb_MASTER_KEY`
+- **Utility**: Always works. Orders created with this key automatically "adopt" the developer's current dashboard session if they are logged in.
 
 ## 🛠 Tech Stack
 - **Backend:** Python (Flask) - Service-Oriented Package Architecture
 - **Frontend:** Vanilla HTML5, CSS3 (Glassmorphic UI), JavaScript
-- **Database:** JSON-based persistent storage (`data/orders.json`, `data/users.json`, `data/webhooks.json`)
+- **Database:** SQLite (`data/sandbox.db`)
 - **Notifications:** Telegram Bot Integration (Notifications & Remote Approval)
 - **API Simulation:** Realistic Sandbox supporting Jodo, Razorpay, and Easebuzz.
 
