@@ -5,33 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Jodo Developer Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="portal.css">
+    <link rel="stylesheet" href="/dashboard/portal.css">
 </head>
 <body>
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
+    <div class="aurora"></div>
     
     <div class="auth-container">
         <div class="auth-header">
-            <h1>Jodo</h1>
-            <p>Developer Portal</p>
+            <div class="logo">
+                <div class="logo-box">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+            </div>
+            <h1>Welcome Back</h1>
+            <p>Access your Jodo Developer console</p>
         </div>
         
         <form id="loginForm">
             <div class="form-group">
                 <label>Email address</label>
-                <input type="email" id="email" placeholder="dev_user@jodo.io" required>
+                <input type="email" id="email" placeholder="dev_user@jodo.io" required autocomplete="email">
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" id="password" placeholder="••••••••" required>
+                <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
             </div>
             
-            <button type="submit" class="auth-button">Sign In to Portal</button>
+            <button type="submit" class="auth-button">Sign In to Dashboard</button>
         </form>
         
         <div class="auth-footer">
-            Don't have an account? <a href="/signup">Create an Account</a>
+            New to Jodo? <a href="/signup">Create an Account</a>
         </div>
     </div>
 
@@ -39,7 +45,10 @@
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button');
-            btn.textContent = 'Authenticating...';
+            const originalText = btn.textContent;
+            btn.textContent = 'Verifying Credentials...';
+            btn.style.opacity = '0.7';
+            btn.disabled = true;
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -57,11 +66,15 @@
                     window.location.href = '/console-home';
                 } else {
                     alert(data.message);
-                    btn.textContent = 'Sign In to Portal';
+                    btn.textContent = originalText;
+                    btn.style.opacity = '1';
+                    btn.disabled = false;
                 }
             } catch (err) {
-                alert('Connection failed to backend');
-                btn.textContent = 'Sign In to Portal';
+                alert('Connection failed to Jodo services');
+                btn.textContent = originalText;
+                btn.style.opacity = '1';
+                btn.disabled = false;
             }
         });
     </script>

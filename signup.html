@@ -5,37 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register | Jodo Developer Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="portal.css">
+    <link rel="stylesheet" href="/dashboard/portal.css">
 </head>
 <body>
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
+    <div class="aurora"></div>
     
     <div class="auth-container">
         <div class="auth-header">
+            <div class="logo">
+                <div class="logo-box">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+            </div>
             <h1>Create Account</h1>
-            <p>Get instant sandbox access</p>
+            <p>Start your sandbox integration</p>
         </div>
         
         <form id="signupForm">
             <div class="form-group">
                 <label>Full Name</label>
-                <input type="text" id="name" placeholder="John Doe" required>
+                <input type="text" id="name" placeholder="John Doe" required autocomplete="name">
             </div>
             <div class="form-group">
                 <label>Email address</label>
-                <input type="email" id="email" placeholder="dev_user@jodo.io" required>
+                <input type="email" id="email" placeholder="dev_user@jodo.io" required autocomplete="email">
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" id="password" placeholder="••••••••" required>
+                <input type="password" id="password" placeholder="••••••••" required autocomplete="new-password">
             </div>
             
             <button type="submit" class="auth-button">Initialize Sandbox</button>
         </form>
         
         <div class="auth-footer">
-            Already have an account? <a href="/">Login</a>
+            Already have an account? <a href="/">Sign In</a>
         </div>
     </div>
 
@@ -43,7 +49,10 @@
         document.getElementById('signupForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button');
-            btn.textContent = 'Initializing...';
+            const originalText = btn.textContent;
+            btn.textContent = 'Allocating Resources...';
+            btn.style.opacity = '0.7';
+            btn.disabled = true;
             
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
@@ -58,15 +67,19 @@
                 
                 const data = await response.json();
                 if (data.status === 'success') {
-                    alert('Success! Please login to continue.');
+                    alert('Success! Your sandbox is ready. Please log in.');
                     window.location.href = '/';
                 } else {
                     alert(data.message);
-                    btn.textContent = 'Initialize Sandbox';
+                    btn.textContent = originalText;
+                    btn.style.opacity = '1';
+                    btn.disabled = false;
                 }
             } catch (err) {
-                alert('Connection failed to backend');
-                btn.textContent = 'Initialize Sandbox';
+                alert('Account initialization failed');
+                btn.textContent = originalText;
+                btn.style.opacity = '1';
+                btn.disabled = false;
             }
         });
     </script>
