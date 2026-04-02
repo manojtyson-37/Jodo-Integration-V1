@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jodo Checkout | Sandbox</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --jodo-blue: #2563eb;
+            --jodo-dark: #1e3a8a;
+            --jodo-green: #10b981;
+            --easebuzz-purple: #6366f1;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f3f4f6;
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* Jodo Header */
+        .jodo-header {
+            background: var(--jodo-blue);
+            height: 200px;
+            padding: 40px 10%;
+            color: white;
+            position: relative;
+            transition: background 0.3s ease;
+        }
+
+        .jodo-header.success { background: var(--jodo-green); }
+
+        .jodo-header h1 { font-size: 1.8rem; margin-bottom: 8px; }
+        .jodo-header p { font-size: 0.9rem; opacity: 0.8; }
+
+        /* Main Container */
+        .checkout-wrapper {
+            max-width: 1100px;
+            margin: -80px auto 40px;
+            display: flex;
+            gap: 40px;
+            padding: 0 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .details-section {
+            flex: 1;
+            padding-top: 100px;
+        }
+
+        .success-details {
+            display: none;
+            padding-top: 20px;
+        }
+
+        .detail-item {
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
+
+        .detail-item strong { margin-right: 8px; display: inline-block; }
+
+        /* User Details Card */
+        .details-card {
+            width: 400px;
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            background: #fafafa;
+        }
+
+        .amount-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 32px;
+            padding-top: 32px;
+            border-top: 1px solid var(--border);
+        }
+
+        .total-label { font-weight: 700; font-size: 0.9rem; }
+        .total-amount { font-weight: 800; font-size: 1.2rem; }
+
+        .btn-pay {
+            width: 100%;
+            background: var(--jodo-blue);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-top: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-pay:hover { background: var(--jodo-dark); }
+
+        /* Easebuzz Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal-card {
+            width: 450px;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #3730a3 0%, #4338ca 100%);
+            padding: 24px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body { padding: 32px; }
+        .payment-option {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: 1px solid transparent;
+            margin-bottom: 12px;
+        }
+
+        .payment-option:hover { background: #f8fafc; border-color: var(--border); }
+        .payment-icon { width: 40px; height: 40px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+
+        /* UPI Detail */
+        #upi-screen { display: none; }
+        .dummy-upi-input { width: 100%; padding: 16px; border: 2px solid var(--jodo-blue); border-radius: 12px; font-size: 1.1rem; margin: 20px 0; outline: none; }
+
+        /* Footer */
+        .footer {
+            margin-top: 40px;
+            padding: 0 10%;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .logo-footer { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+    <header class="jodo-header" id="main-header">
+        <h1 id="header-brand">Jodo Sandbox</h1>
+        <p id="header-status">Order based PG</p>
+    </header>
+
+    <div class="checkout-wrapper">
+        <div class="details-section">
+            <div id="initial-branding" class="branding-space"></div>
+            
+            <div id="success-details" class="success-details">
+                <div class="detail-item"><strong>Payer Name :</strong> <span id="s-name">as</span></div>
+                <div class="detail-item"><strong>Payer Email :</strong> <span id="s-email">as@v.com</span></div>
+                <div class="detail-item"><strong>Payer Phone Number :</strong> <span id="s-phone">8761872718</span></div>
+                <div class="detail-item"><strong>Transaction ID :</strong> <span id="s-tid" style="font-weight: 600;">DeCkSRK...</span></div>
+            </div>
+        </div>
+
+        <div class="details-card">
+            <div id="card-initial">
+                <div class="card-title"><i class="far fa-user"></i> User details</div>
+                <div class="form-group"><label>Payer Name</label><input type="text" id="p-name" value="{{ customer.name or '' }}"></div>
+                <div class="form-group"><label>Payer Email</label><input type="text" id="p-email" value="{{ customer.email or '' }}"></div>
+                <div class="form-group"><label>Payer Phone Number</label><input type="text" id="p-phone" value="{{ customer.phone or '' }}"></div>
+                <div style="font-weight: 700; font-size: 0.9rem; margin: 24px 0 16px;">Payment details</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+                    <span><input type="checkbox" checked disabled> Payable amount</span>
+                    <span style="background: #fafafa; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px;">₹ {{ amount }}</span>
+                </div>
+                <div class="amount-section">
+                    <span class="total-label">Total amount</span>
+                    <span class="total-amount">₹{{ amount }}</span>
+                </div>
+                <button class="btn-pay" onclick="showEasebuzz()">Pay Now</button>
+            </div>
+
+            <div id="card-success" style="display: none;">
+                <div class="card-title">Payment Info</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; margin-bottom: 250px;">
+                    <span>Payable amount</span>
+                    <span>₹{{ amount }}</span>
+                </div>
+                <div class="amount-section" style="margin-bottom: 24px;">
+                    <span class="total-label">Total amount</span>
+                    <span class="total-amount">₹{{ amount }}</span>
+                </div>
+                <button class="btn-pay" onclick="window.close()">Make Another Payment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Easebuzz Modal -->
+    <div class="modal-overlay" id="easebuzz-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 10px; cursor: pointer;" onclick="hideEasebuzz()">
+                    <i class="fas fa-times"></i> <span>Cancel</span>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 0.7rem; opacity: 0.8;">Powered By</span><br>
+                    <span style="font-weight: 800; letter-spacing: 1px;">Easebuzz</span>
+                </div>
+            </div>
+            <div class="modal-body" id="method-screen">
+                <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px; font-weight: 600;">Select Payment Method</div>
+                <div class="payment-option"><div class="payment-icon"><i class="fas fa-credit-card"></i></div><div><div style="font-weight: 600; font-size: 0.95rem;">Credit Card</div><div style="font-size: 0.75rem; color: var(--text-muted);">Visa, Mastercard, RuPay</div></div></div>
+                <div class="payment-option" onclick="showUPIDetail()"><div class="payment-icon"><i class="fas fa-mobile-alt"></i></div><div><div style="font-weight: 600; font-size: 0.95rem;">UPI</div><div style="font-size: 0.75rem; color: var(--text-muted);">GPay, PhonePe, Paytm</div></div></div>
+                <div class="payment-option"><div class="payment-icon"><i class="fas fa-university"></i></div><div style="font-weight: 600; font-size: 0.95rem;">NetBanking</div></div>
+            </div>
+            <div class="modal-body" id="upi-screen">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; cursor: pointer;" onclick="showMethods()">
+                    <i class="fas fa-arrow-left"></i> <span style="font-weight: 600;">Back to methods</span>
+                </div>
+                <div style="font-weight: 700; font-size: 1.1rem;">Enter UPI ID</div>
+                <input type="text" class="dummy-upi-input" id="upi-id" placeholder="jodo@upi">
+                <button class="btn-pay" onclick="finalizePayment()">Pay ₹{{ amount }}</button>
+            </div>
+            <div class="modal-body" id="processing-screen" style="display: none; text-align: center; padding: 60px 40px;">
+                <div style="width: 50px; height: 50px; border: 4px solid #f3f4f6; border-top-color: var(--jodo-blue); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 24px;"></div>
+                <div style="font-weight: 700; font-size: 1.2rem;">Processing Payment...</div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="logo-footer"><span style="font-size: 0.7rem;">Powered by</span> <span style="font-weight: 900; color: var(--jodo-dark); font-style: italic;">JODO </span></div>
+        <div style="display: flex; gap: 15px; opacity: 0.6;">
+            <span>About us</span> <span>Terms & Conditions</span> <span>Privacy policy</span> <span>+91 9606108182</span> <span>support@jodopay.com</span>
+        </div>
+    </footer>
+
+    <script>
+        const ORDER_ID = "{{ order_id }}";
+        const AMOUNT = {{ amount }};
+        const PAY_ID = "DeCk" + Math.random().toString(36).substring(2, 12).toUpperCase();
+
+        function showEasebuzz() { document.getElementById('easebuzz-modal').style.display = 'flex'; }
+        function hideEasebuzz() { document.getElementById('easebuzz-modal').style.display = 'none'; }
+        function showUPIDetail() { document.getElementById('method-screen').style.display = 'none'; document.getElementById('upi-screen').style.display = 'block'; }
+        function showMethods() { document.getElementById('method-screen').style.display = 'block'; document.getElementById('upi-screen').style.display = 'none'; }
+
+        async function finalizePayment() {
+            const upiId = document.getElementById('upi-id').value;
+            if(!upiId) { alert("Enter UPI ID"); return; }
+            document.getElementById('upi-screen').style.display = 'none';
+            document.getElementById('processing-screen').style.display = 'block';
+
+            try {
+                const response = await fetch(`/pay/${ORDER_ID}/pay`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ success: true, latency: 1 })
+                });
+                if (response.ok) {
+                    showSuccess();
+                } else { alert("Error"); }
+            } catch (e) { console.error(e); }
+        }
+
+        function showSuccess() {
+            hideEasebuzz();
+            // Update Header
+            document.getElementById('main-header').classList.add('success');
+            document.getElementById('header-brand').textContent = "Payment Complete";
+            document.getElementById('header-status').textContent = "Order based PG";
+            
+            // Show Success Details
+            document.getElementById('initial-branding').style.display = 'none';
+            document.getElementById('success-details').style.display = 'block';
+            
+            // Populate Details
+            document.getElementById('s-name').textContent = document.getElementById('p-name').value || 'N/A';
+            document.getElementById('s-email').textContent = document.getElementById('p-email').value || 'N/A';
+            document.getElementById('s-phone').textContent = document.getElementById('p-phone').value || 'N/A';
+            document.getElementById('s-tid').textContent = PAY_ID;
+            
+            // Switch Card
+            document.getElementById('card-initial').style.display = 'none';
+            document.getElementById('card-success').style.display = 'block';
+        }
+    </script>
+    <style> @keyframes spin { to { transform: rotate(360deg); } } </style>
+</body>
+</html>

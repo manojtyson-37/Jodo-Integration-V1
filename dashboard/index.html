@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jodo | Developer Dashboard</title>
+    <link rel="stylesheet" href="/dashboard/index.css">
+    <link rel="stylesheet" href="/dashboard/playground.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <span>Jodo <span style="font-size: 0.6rem; background: var(--secondary); padding: 2px 6px; border-radius: 10px; vertical-align: middle; margin-left: 4px; font-weight: 800; letter-spacing: 0.5px;">BETA</span></span>
+            </div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#" class="nav-item active" data-tab="overview"><i class="fas fa-home"></i> Overview</a></li>
+                    <li><a href="#" class="nav-item" data-tab="api-keys"><i class="fas fa-key"></i> API Keys <span style="font-size: 0.5rem; background: #3b82f6; padding: 1px 4px; border-radius: 4px; position: relative; top: -5px; font-weight: 800;">NEW</span></a></li>
+                    <li><a href="#" class="nav-item" data-tab="playground"><i class="fas fa-vial"></i> API Playground</a></li>
+                    <li><a href="#" class="nav-item" data-tab="transactions"><i class="fas fa-receipt"></i> Transactions</a></li>
+                    <li><a href="#" class="nav-item" data-tab="webhooks"><i class="fas fa-link"></i> Webhooks & Logs</a></li>
+                    <li><a href="#" class="nav-item" data-tab="docs"><i class="fas fa-book"></i> Documentation</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="animate">
+                <div>
+                    <h1 id="welcome-heading" style="font-size: 2rem; margin-bottom: 0.5rem;">Welcome back, Developer</h1>
+                    <p style="color: var(--text-muted);">Manage your Jodo integrations and test your flows.</p>
+                </div>
+                <div class="env-badge" style="background: rgba(99, 102, 241, 0.1); color: #818cf8; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.2); display: flex; align-items: center; gap: 6px;">
+                    <span style="width: 8px; height: 8px; background: #6366f1; border-radius: 50%; display: inline-block; box-shadow: 0 0 10px #6366f1;"></span>
+                    SANDBOX MODE
+                </div>
+            </header>
+
+            <!-- Overview Tab Content -->
+            <div id="overview-tab" class="tab-content active">
+                <!-- Stats Grid -->
+                <div class="stats-grid animate" style="animation-delay: 0.1s;">
+                    <div class="card">
+                        <div class="stat-label">Total Requests (24h)</div>
+                        <div class="stat-value" id="stat-total-requests">0</div>
+                    </div>
+                    <div class="card">
+                        <div class="stat-label">Success Rate</div>
+                        <div class="stat-value" id="stat-success-rate" style="color: #10b981;">100%</div>
+                    </div>
+                    <div class="card">
+                        <div class="stat-label">Avg. Latency</div>
+                        <div class="stat-value" id="stat-avg-latency" style="color: var(--secondary);">0ms</div>
+                    </div>
+                </div>
+
+                <!-- API Key Section (Mini) -->
+                <section class="card animate" style="animation-delay: 0.2s;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 1.25rem;">API Credentials (Sandbox)</h2>
+                        <button class="btn-primary" onclick="switchTab('api-keys')">View All Keys</button>
+                    </div>
+                    <div class="api-key-container">
+                        <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">API Key</label>
+                        <div class="key-row">
+                            <span class="key-value" id="mini-key-display">jodo_sb_••••••••••••</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- API Keys Tab Content -->
+            <div id="api-keys-tab" class="tab-content" style="display: none;">
+                <section class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 1.3rem;">Manage Keys</h2>
+                        <button class="btn-primary" id="generate-keys-btn">Generate New Key</button>
+                    </div>
+                    <!-- Full API Key rows here -->
+                    <div class="api-key-container">
+                        <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">API Base URL</label>
+                        <div class="key-row">
+                            <span class="key-value" id="sb-base-url-display">https://ext.devtest1.jodopay.com</span>
+                            <button class="copy-btn" onclick="copyText('https://ext.devtest1.jodopay.com', 'Base URL')">Copy</button>
+                        </div>
+
+                        <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-top: 1.5rem; display: block;">Authorization Header</label>
+                        <div class="key-row">
+                            <span class="key-value" id="sb-auth-header-display">Basic ••••••••••••••••••••••••••••••••</span>
+                            <button class="copy-btn" onclick="copyToClipboard('sb-auth-header-display', 'Auth Header')">Copy</button>
+                        </div>
+
+                        <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-top: 1.5rem; display: block;">API Key</label>
+                        <div class="key-row">
+                            <span class="key-value" id="sb-key-display">jodo_sb_••••••••••••</span>
+                            <button class="copy-btn" onclick="copyToClipboard('sb-key-display', 'API Key')">Copy</button>
+                        </div>
+
+                        <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-top: 1.5rem; display: block;">API Secret</label>
+                        <div class="key-row">
+                            <span class="key-value" id="sb-secret-display">••••••••••••••••••••••••••••••••</span>
+                            <button class="copy-btn" id="reveal-secret-btn">Reveal</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Playground Tab Content -->
+            <div id="playground-tab" class="tab-content" style="display: none;">
+                <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">API Playground</h2>
+                <div class="playground-container">
+                    <div class="api-list" id="api-list">
+                        <!-- Populated by playground.js -->
+                    </div>
+                    <div class="api-details">
+                        <div class="editor-pane">
+                            <div class="pane-header">
+                                <span id="endpoint-display" style="color: var(--secondary);">/api/v1/...</span>
+                                <div style="display: flex; gap: 0.75rem;">
+                                    <button id="copy-curl-btn" class="btn-primary" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--border); box-shadow: none; padding: 0.5rem 1rem;">Copy Curl</button>
+                                    <button id="run-btn" class="btn-primary" style="padding: 0.5rem 1rem;">Send Request</button>
+                                </div>
+                            </div>
+                            <textarea id="json-editor" class="json-editor" placeholder="{ ... }"></textarea>
+                        </div>
+                        <div class="response-pane">
+                            <div class="pane-header">Response</div>
+                            <pre id="response-body" class="json-response">// Response will appear here</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions Tab Content -->
+            <div id="transactions-tab" class="tab-content" style="display: none;">
+                <section class="card animate">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.5rem;">Transaction History</h2>
+                        <div class="filters">
+                            <button class="btn-secondary" style="font-size: 0.8rem; padding: 4px 12px; border: 1px solid var(--border); border-radius: 4px;">Filter</button>
+                            <button class="btn-secondary" onclick="loadTransactions()" style="font-size: 0.8rem; padding: 4px 12px; border: 1px solid var(--border); border-radius: 4px; margin-left: 8px;">Refresh</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead style="background: rgba(255,255,255,0.05);">
+                                <tr>
+                                    <th style="padding: 12px; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Order ID</th>
+                                    <th style="padding: 12px; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Amount</th>
+                                    <th style="padding: 12px; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Status</th>
+                                    <th style="padding: 12px; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Gateway</th>
+                                    <th style="padding: 12px; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transaction-list">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Webhooks Tab Content -->
+            <div id="webhooks-tab" class="tab-content" style="display: none;">
+                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                    <section class="card">
+                        <h2 style="font-size: 1.25rem; margin-bottom: 1.5rem;">Webhook Endpoints</h2>
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <input type="text" id="webhook-url-input" placeholder="https://your-api.com/webhook" style="flex: 1; padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                        <button class="btn-primary" onclick="addWebhook()">Add Webhook</button>
+                    </div>
+                    <!-- Webhook Events -->
+                    <div style="margin-bottom: 20px; display: flex; gap: 15px; font-size: 0.8rem; color: var(--text-muted);">
+                        <span>Events:</span>
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;">
+                            <input type="checkbox" name="webhook-event" value="order.payment.debited" checked> Debited
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;">
+                            <input type="checkbox" name="webhook-event" value="order.payment.settled" checked> Settled
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: white;">
+                            <input type="checkbox" name="webhook-event" value="order.payment.failed" checked> Failed
+                        </label>
+                    </div>
+                        <div id="endpoint-list" class="endpoint-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h2 style="font-size: 1.25rem;">Delivery Logs</h2>
+                            <button class="btn-secondary" onclick="loadWebhookLogs()" style="padding: 4px 12px; font-size: 0.7rem;">Refresh</button>
+                        </div>
+                        <div id="webhook-logs" class="logs-container">
+                            <!-- Populated by JS -->
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Log Viewer Modal -->
+            <div id="log-viewer" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 100; align-items: center; justify-content: center;">
+                <div class="card" style="width: 90%; max-width: 800px; max-height: 80vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h3 id="modal-title">Log Details</h3>
+                        <button onclick="document.getElementById('log-viewer').style.display='none'" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem;">&times;</button>
+                    </div>
+                    <pre id="modal-content" style="background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 12px; font-family: monospace; font-size: 0.85rem; overflow-x: auto;"></pre>
+                </div>
+            </div>
+
+            <!-- Documentation Tab -->
+            <div id="docs-tab" class="tab-content" style="display: none;">
+                <div class="docs-container animate">
+                    <nav class="docs-sidebar">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 1rem; letter-spacing: 1px;">Contents</div>
+                        <a href="#events" class="docs-sidebar-link active">Webhook Events</a>
+                        <a href="#reliability" class="docs-sidebar-link">Reliability & Retries</a>
+                        <a href="#idempotency" class="docs-sidebar-link">Idempotency</a>
+                        <a href="#security" class="docs-sidebar-link">Security & Signatures</a>
+                        <a href="#failures" class="docs-sidebar-link">Handling Failures</a>
+                    </nav>
+
+                    <div class="docs-content">
+                        <!-- Events Section -->
+                        <section id="events" class="docs-section">
+                            <h2>Order-based Integration</h2>
+                            <p>Jodo sends real-time notifications for Pay Order events. This is the primary integration method for current sandbox testing.</p>
+                            
+                            <h3>Available Events</h3>
+                            <div class="code-snippet">
+                                <div class="code-label">Example JSON</div>
+                                <pre>"event": "order.payment.debited"
+"data": {
+    "id": "pay_8607c3cb94ae",
+    "order_id": "order_fd8ebc8f1e27",
+    "amount": 1500,
+    "status": "paid"
+}</pre>
+                            </div>
+                            <ul class="docs-list">
+                                <li><i class="fas fa-check-circle"></i> <span class="event-tag">order.payment.debited</span> - Triggered when a Pay order payment is made.</li>
+                                <li><i class="fas fa-check-circle"></i> <span class="event-tag">order.payment.settled</span> - Triggered when a Pay order payment is settled to the bank account.</li>
+                            </ul>
+                        </section>
+
+                        <!-- Reliability Section -->
+                        <section id="reliability" class="docs-section">
+                            <h2>Reliability & Retries</h2>
+                            <p>To ensure events are delivered successfully, Jodo implements a robust retry policy. We consider delivery successful only when your system returns an <strong>HTTP 200 OK</strong>.</p>
+                            <div class="info-alert">
+                                <i class="fas fa-info-circle"></i>
+                                <div>
+                                    <strong>Retry Policy:</strong> Jodo retries up to 5 times over a period of 3 days. Retries happen at 6-hour and 24-hour intervals.
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Idempotency Section -->
+                        <section id="idempotency" class="docs-section">
+                            <h2>Ensure Idempotency</h2>
+                            <p>Due to the retry logic, your system might receive the same event multiple times. You should ensure that your application handles this gracefully without duplicate processing.</p>
+                            <div class="info-alert">
+                                <i class="fas fa-lightbulb"></i>
+                                <div>
+                                    <strong>Best Practice:</strong> Always check the Order ID or Payment ID before updating your database. Return 200 OK even if the event was already processed.
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Security Section -->
+                        <section id="security" class="docs-section">
+                            <h2>Security & Signatures</h2>
+                            <p>We provide multiple options to verify that requests are coming from Jodo:</p>
+                            
+                            <h3>1. IP Whitelisting</h3>
+                            <p>Configure your firewall to allow traffic from the following IP addresses:</p>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div class="card" style="padding: 1rem;">
+                                    <div style="font-size: 0.7rem; color: var(--secondary); text-transform: uppercase;">UAT Environments</div>
+                                    <pre style="font-size: 0.8rem; margin-top: 8px;">3.108.86.33
+13.127.40.177
+65.0.77.215</pre>
+                                </div>
+                                <div class="card" style="padding: 1rem;">
+                                    <div style="font-size: 0.7rem; color: #10b981; text-transform: uppercase;">Production</div>
+                                    <pre style="font-size: 0.8rem; margin-top: 8px;">3.6.234.242
+3.111.80.40
+13.232.24.175</pre>
+                                </div>
+                            </div>
+
+                            <h3>2. Signature Verification</h3>
+                            <p>Use the <span class="event-tag">X-Jodo-Signature</span> header to verify the payload using your Webhook Secret and HMAC-SHA256.</p>
+                        </section>
+
+                        <!-- Failures Section -->
+                        <section id="failures" class="docs-section">
+                            <h2>Handling Failures</h2>
+                            <p>If a webhook fails continuously (100 times in Production, 10 times in UAT), the subscription is automatically disabled to prevent system overload. You will receive an email notification for such events.</p>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/dashboard/dashboard.js"></script>
+    <script src="/dashboard/playground.js"></script>
+</body>
+</html>
