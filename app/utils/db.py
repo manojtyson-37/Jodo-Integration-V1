@@ -24,8 +24,9 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
+    db_url = os.getenv('DATABASE_URL')
     
-    # Orders Table
+    # 1. Core Orders Table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS orders (
             id TEXT PRIMARY KEY,
@@ -44,7 +45,7 @@ def init_db():
         )
     ''')
     
-    # Users Table (Expanded)
+    # 2. Core Users Table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             email TEXT PRIMARY KEY,
@@ -52,19 +53,27 @@ def init_db():
             password TEXT,
             sandbox_key TEXT,
             sandbox_secret TEXT,
-            webhooks TEXT,
-            activated INTEGER DEFAULT 0,
             created_at TEXT
         )
     ''')
     
-    # Manual Migration check for webhooks/activated columns
-    # This ensures old SQLite databases are updated without re-creation
+    # 3. Dynamic Schema Migrations (Fix for 500 Errors)
+    # Detect existing columns to prevent errors on multiple restarts
     columns = []
-    db_url = os.getenv('DATABASE_URL')
-    if not db_url:
+    if db_url:
+        # PostgreSQL Migration
+        cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='users'")
+        columns = [row[0] for row in cursor.fetchall()]
+        
+        if 'webhooks' not in columns:
+            cursor.execute("ALTER TABLE users ADD COLUMN webhooks TEXT")
+        if 'activated' not in columns:
+            cursor.execute("ALTER TABLE users ADD COLUMN activated INTEGER DEFAULT 0")
+    else:
+        # SQLite Migration
         cursor.execute("PRAGMA table_info(users)")
         columns = [row[1] for row in cursor.fetchall()]
+        
         if 'webhooks' not in columns:
             cursor.execute("ALTER TABLE users ADD COLUMN webhooks TEXT")
         if 'activated' not in columns:
@@ -85,7 +94,9 @@ def save_order_db(order_id, order_data):
                                 customer_name, customer_email, customer_phone, 
                                 callback_url, details, created_at, updated_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status, updated_at = EXCLUDED.updated_at
+            ON CONFLICT (id) DO UPDATE SET 
+                status = EXCLUDED.status, 
+                updated_at = EXCLUDED.updated_at
         '''
     else:
         sql = f'INSERT OR REPLACE INTO orders VALUES ({", ".join([placeholder]*13)})'
@@ -100,6 +111,7 @@ def save_order_db(order_id, order_data):
     conn.commit()
     conn.close()
 
+# ... (get_order_db and list_orders_db remain identical)
 def get_order_db(order_id):
     conn = get_db_connection()
     db_url = os.getenv('DATABASE_URL')
@@ -151,9 +163,12 @@ def save_user_db(user_data):
             INSERT INTO users (email, name, password, sandbox_key, sandbox_secret, webhooks, activated, created_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (email) DO UPDATE SET 
-                name = EXCLUDED.name, password = EXCLUDED.password,
-                sandbox_key = EXCLUDED.sandbox_key, sandbox_secret = EXCLUDED.sandbox_secret,
-                webhooks = EXCLUDED.webhooks, activated = EXCLUDED.activated
+                name = EXCLUDED.name, 
+                password = EXCLUDED.password,
+                sandbox_key = EXCLUDED.sandbox_key, 
+                sandbox_secret = EXCLUDED.sandbox_secret,
+                webhooks = EXCLUDED.webhooks, 
+                activated = EXCLUDED.activated
         '''
     else:
         sql = 'INSERT OR REPLACE INTO users (email, name, password, sandbox_key, sandbox_secret, webhooks, activated, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
