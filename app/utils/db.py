@@ -1,22 +1,42 @@
-import sqlite3
 import os
 import json
+import sqlite3
 from datetime import datetime
 
-DATABASE_PATH = os.path.join(os.path.dirname(__file__), '../../data/sandbox.db')
-
+# Database Connection Helper
 def get_db_connection():
-    conn = sqlite3.connect(DATABASE_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    db_url = os.getenv('DATABASE_URL')
+    
+    if db_url:
+        # Production: PostgreSQL (Render Free Tier)
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+        
+        # Handle Render's 'postgres://' vs 'postgresql://' if necessary
+        # Render usually handles this, but some drivers require postgresql://
+        if db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql://", 1)
+            
+        conn = psycopg2.connect(db_url)
+        # return conn # Will need to wrap for dict access or use RealDictCursor
+        return conn
+    else:
+        # Local: SQLite
+        db_path = os.path.join(os.path.dirname(__file__), '../../data/sandbox.db')
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
 
 def init_db():
-    """
-    Initializes the database schema for orders and users.
-    """
-    os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
     conn = get_db_connection()
     cursor = conn.cursor()
+    
+    # Check if we are using Postgres or SQLite for table creation
+    db_url = os.getenv('DATABASE_URL')
+    
+    # We use SERIAL for Postgres or just the standard types
+    # TEXT is compatible with both.
     
     # Orders Table
     cursor.execute('''
@@ -56,13 +76,34 @@ def save_order_db(order_id, order_data):
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute('''
-        INSERT OR REPLACE INTO orders (
-            id, user_email, amount, currency, status, pg, 
-            customer_name, customer_email, customer_phone, 
-            callback_url, details, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
+    db_url = os.getenv('DATABASE_URL')
+    placeholder = "%s" if db_url else "?"
+    
+    # SQLite uses INSERT OR REPLACE
+    # Postgres uses INSERT ... ON CONFLICT
+    if db_url:
+        # Postgres Logic
+        sql = '''
+            INSERT INTO orders (
+                id, user_email, amount, currency, status, pg, 
+                customer_name, customer_email, customer_phone, 
+                callback_url, details, created_at, updated_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id) DO UPDATE SET 
+                status = EXCLUDED.status,
+                updated_at = EXCLUDED.updated_at
+        '''
+    else:
+        # SQLite Logic
+        sql = f'''
+            INSERT OR REPLACE INTO orders (
+                id, user_email, amount, currency, status, pg, 
+                customer_name, customer_email, customer_phone, 
+                callback_url, details, created_at, updated_at
+            ) VALUES ({', '.join([placeholder]*13)})
+        '''
+
+    cursor.execute(sql, (
         order_id,
         order_data.get('user_email'),
         order_data.get('amount'),
@@ -83,8 +124,17 @@ def save_order_db(order_id, order_data):
 
 def get_order_db(order_id):
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM orders WHERE id = ?', (order_id,))
+    db_url = os.getenv('DATABASE_URL')
+    
+    if db_url:
+        from psycopg2.extras import RealDictCursor
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        placeholder = "%s"
+    else:
+        cursor = conn.cursor()
+        placeholder = "?"
+        
+    cursor.execute(f'SELECT * FROM orders WHERE id = {placeholder}', (order_id,))
     row = cursor.fetchone()
     conn.close()
     
@@ -101,8 +151,17 @@ def get_order_db(order_id):
 
 def list_orders_db(user_email):
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM orders WHERE user_email = ?', (user_email,))
+    db_url = os.getenv('DATABASE_URL')
+    
+    if db_url:
+        from psycopg2.extras import RealDictCursor
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        placeholder = "%s"
+    else:
+        cursor = conn.cursor()
+        placeholder = "?"
+        
+    cursor.execute(f'SELECT * FROM orders WHERE user_email = {placeholder}', (user_email,))
     rows = cursor.fetchall()
     conn.close()
     

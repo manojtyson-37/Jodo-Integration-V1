@@ -23,15 +23,19 @@ After a successful payment simulation:
 - It then **automatically redirects** the browser to the merchant's `callback_url`.
 - URL Parameters included: `?order_id=...&status=paid&payment_id=...`
 
-### 3. Data Persistence (Render Guide)
-The system now uses **SQLite** (`data/sandbox.db`). To prevent data loss on Render:
-1. Go to your **Render Dashboard** -> **Blueprints** or **Web Service**.
-2. Go to **Settings** -> **Disks**.
-3. Add a **Disk**:
-   - **Name**: `sandbox-data`
-   - **Mount Path**: `/opt/render/project/src/data`
-   - **Size**: 1GB (Free tier/Minimum)
-This ensures your orders and users are **never deleted**, even when the server restarts.
+### 3. Data Persistence (Free PostgreSQL Guide)
+Since Render's free tier disables persistent disks, we use its **Free PostgreSQL Service** for durable storage. 
+
+**Setup Steps:**
+1. In your **Render Dashboard**, click **New +** -> **PostgreSQL**.
+2. **Name**: `jodo-sandbox-db`
+3. **Instance Type**: Select **Free** (lasts 90 days, renewable).
+4. After creation, go to the **Connect** button and copy the **Internal Database URL**.
+5. Go to your **Web Service** (the main app) -> **Environment**.
+6. Add a new Environment Variable:
+   - **Key**: `DATABASE_URL`
+   - **Value**: (Paste the URL you copied)
+7. Save changes. The app will automatically migrate from local SQLite to Postgres!
 
 ### 4. Master Demo Key
 - **Key**: `jodo_sb_MASTER_KEY`
