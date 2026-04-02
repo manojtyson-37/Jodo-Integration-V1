@@ -35,10 +35,9 @@ def process_payment(order_id):
     """
     data = request.get_json()
     success = data.get('success', False)
-    latency = data.get('latency', 0) # Simulated latency in seconds
-    
-    if latency > 0:
-        time.sleep(min(latency, 10)) # Cap at 10s
+    # Removed blocking sleep to prevent worker congestion in cloud environments.
+    # if latency > 0:
+    #     time.sleep(min(latency, 10))
         
     orders = load_json(ORDER_DATA_FILE)
     order = orders.get(order_id)

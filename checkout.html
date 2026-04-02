@@ -306,8 +306,17 @@
                 if (response.ok) {
                     showSuccess();
                 } else { 
-                    const data = await response.json();
-                    alert("Error: " + (data.message || "Payment failed"));
+                    try {
+                        const text = await response.text();
+                        try {
+                            const data = JSON.parse(text);
+                            alert("Error: " + (data.message || "Payment failed"));
+                        } catch (e) {
+                            alert("API Error: The server returned an invalid response.");
+                        }
+                    } catch (err) {
+                        alert("API Error: The server returned an invalid response.");
+                    }
                     hideEasebuzz();
                 }
             } catch (e) { 
