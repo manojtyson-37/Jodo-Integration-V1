@@ -1,21 +1,18 @@
 from flask import Blueprint, request, jsonify, send_from_directory, current_app
+from datetime import datetime
 import uuid
 import os
-from ..utils.storage import load_json, save_json
+from ..utils.db import get_user_db, save_user_db, get_user_by_key_db
 from ..utils.notifier import notify_new_user, notify_login
 
 auth_bp = Blueprint('auth', __name__)
 
-USER_DATA_FILE = 'users.json'
-
 @auth_bp.route('/')
 def index():
-    # Use config-assigned root path for deterministic serving
     return send_from_directory(current_app.config['ROOT_DIR'], 'login.html')
 
 @auth_bp.route('/console-home')
 def dashboard():
-    # Served from the static directory but via console-home route
     return send_from_directory(os.path.join(current_app.config['ROOT_DIR'], 'dashboard'), 'index.html')
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
@@ -88,19 +85,19 @@ def rotate_keys():
     if not email:
         return jsonify({'status': 'error', 'message': 'Email required'}), 400
         
-    users = load_json(USER_DATA_FILE)
-    if email not in users:
+    user = get_user_db(email)
+    if not user:
         return jsonify({'status': 'error', 'message': 'User not found'}), 404
         
     # Generate new keys
     sandbox_key = f"jodo_sb_{uuid.uuid4().hex[:12]}"
     sandbox_secret = uuid.uuid4().hex
     
-    users[email].update({
+    user.update({
         'sandbox_key': sandbox_key,
         'sandbox_secret': sandbox_secret
     })
-    save_json(USER_DATA_FILE, users)
+    save_user_db(user)
     
     return jsonify({
         'status': 'success',
