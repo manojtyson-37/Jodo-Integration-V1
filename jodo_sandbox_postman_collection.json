@@ -1,0 +1,68 @@
+{
+	"info": {
+		"_postman_id": "84a7e93b-1b2c-4d3e-9f0a-1a2b3c4d5e6f",
+		"name": "Jodo Sandbox V1 - Scaling Integration",
+		"description": "Official API collection for the Jodo Developer Sandbox (Live on Render).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create Order",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "{{JODO_API_SECRET}}",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "{{JODO_API_KEY}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Founder Name\",\n    \"phone\": \"9876543210\",\n    \"email\": \"founder@example.com\",\n    \"details\": [\n        {\n            \"component_type\": \"Payable Amount\",\n            \"amount\": 1.0\n        }\n    ],\n    \"callback_url\": \"https://webhook.site/placeholder-token\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{JODO_API_HOST}}/api/v1/integrations/pay/orders",
+					"host": [
+						"{{JODO_API_HOST}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"integrations",
+						"pay",
+						"orders"
+					]
+				}
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "JODO_API_HOST",
+			"value": "https://jodo-integration-v1.onrender.com"
+		},
+		{
+			"key": "JODO_API_KEY",
+			"value": "your_sandbox_key_here"
+		},
+		{
+			"key": "JODO_API_SECRET",
+			"value": "your_sandbox_secret_here"
+		}
+	]
+}

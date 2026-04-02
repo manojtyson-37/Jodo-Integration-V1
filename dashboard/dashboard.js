@@ -7,6 +7,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    // Dynamic Base URL based on current host
+    const baseUrl = window.location.origin;
+    const baseUrlDisplay = document.getElementById('sb-base-url-display');
+    if (baseUrlDisplay) baseUrlDisplay.innerText = baseUrl;
+    const baseUrlCopyBtn = document.querySelector('.api-key-container .key-row .copy-btn');
+    if (baseUrlCopyBtn) {
+        baseUrlCopyBtn.setAttribute('onclick', `copyText('${baseUrl}', 'Base URL')`);
+    }
+
     // Update Profile UI
     const welcomeHeading = document.getElementById('welcome-heading');
     if (welcomeHeading) welcomeHeading.textContent = `Welcome back, ${user.name || 'Developer'}`;
@@ -83,6 +92,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- UI Helpers ---
+
+// Playground API Interaction Logic
+const API_BASE_URL = window.location.origin + '/api/v1/integrations/pay/orders';
+const USER_DATA = JSON.parse(localStorage.getItem('jodo_user') || '{}');
 
 async function loadDashboardStats() {
     const user = JSON.parse(localStorage.getItem('jodo_user') || '{}');
