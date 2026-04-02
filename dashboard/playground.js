@@ -81,11 +81,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const bodyContent = editor.value;
         const authString = `${user.sandbox_key || 'YOUR_KEY'}:${user.sandbox_secret || 'YOUR_SECRET'}`;
         
-        // Use production-test domain for the curl command as requested
-        const baseUrl = "https://ext.devtest1.jodopay.com";
-        const url = `https://${authString}@ext.devtest1.jodopay.com${endpoint}`;
+        // Dynamic URL based on current host to ensure CURL is runnable
+        const baseUrl = window.location.origin;
+        const url = `${baseUrl}${endpoint}`;
 
-        let curlCmd = `curl --location '${url}' \\\n`;
+        let curlCmd = `curl --location 'https://${authString}@${baseUrl.replace('https://', '')}${endpoint}' \\\n`;
         curlCmd += `--header 'Content-Type: application/json' \\\n`;
         curlCmd += `--header 'X-PG: jodo' \\\n`;
         
